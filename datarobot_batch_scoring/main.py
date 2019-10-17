@@ -42,6 +42,7 @@ Example:
 
 
 VALID_DELIMITERS = {';', ',', '|', '\t', ' ', '!', '  '}
+VALID_QUOTECHARS = {'\'', '"'}
 
 
 def parse_args(argv, standalone=False, deployment_aware=False):
@@ -207,6 +208,11 @@ def parse_args(argv, standalone=False, deployment_aware=False):
                         'determine the delimiter. The special keyword "tab" '
                         'can be used to indicate a tab delimited csv. "pipe"'
                         'can be used to indicate "|"')
+    csv_gr.add_argument('--quotechar', type=str, default=None,
+                        help='Specifies the quotechar to recognize in '
+                        'the input .csv file. E.g. "--quotechar=\'". '
+                        'If not specified, the script tries to automatically '
+                        'determine the quotechar.')
     csv_gr.add_argument('--pred_name', type=str,
                         nargs='?', default=None,
                         help='Specifies column name for prediction results, '
@@ -331,6 +337,10 @@ def parse_generic_options(parsed_args):
         ui.fatal('Delimiter "{}" is not a valid delimiter.'
                  .format(delimiter))
 
+    quotechar = parsed_args.get('quotechar')
+    if quotechar and quotechar not in VALID_QUOTECHARS:
+        ui.fatal('Quotechar "{}" is not valid.')
+
     output_delimiter = parsed_args.get('output_delimiter')
     if output_delimiter == '\\t' or output_delimiter == 'tab':
         # NOTE: on bash you have to use Ctrl-V + TAB
@@ -359,6 +369,7 @@ def parse_generic_options(parsed_args):
         'concurrent': concurrent,
         'dataset': dataset,
         'delimiter': delimiter,
+        'quotechar': quotechar,
         'dry_run': dry_run,
         'encoding': encoding,
         'fast_mode': fast_mode,

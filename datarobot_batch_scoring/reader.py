@@ -385,20 +385,28 @@ class Shovel(object):
             self.p.terminate()
 
 
-def sniff_dialect(sample, sep, skip_dialect, ui):
+def sniff_dialect(sample, sep, quotechar, skip_dialect, ui):
     t1 = time()
     try:
         if skip_dialect:
             ui.debug('investigate_encoding_and_dialect - skip dialect detect')
+            dialect_fmt_params = {}
             if sep:
-                csv.register_dialect('dataset_dialect', csv.excel,
-                                     delimiter=sep)
+                dialect_fmt_params['delimiter'] = sep
+            if quotechar:
+                discarded['quotechar'] = quotechar
+
+            if dialect_fmt_params:
+                csv.register_dialect('dataset_dialect', csv.excel, **dialect_fmt_params)
             else:
                 csv.register_dialect('dataset_dialect', csv.excel)
+
             dialect = csv.get_dialect('dataset_dialect')
         else:
             sniffer = csv.Sniffer()
             dialect = sniffer.sniff(sample, delimiters=sep)
+            if quotechar:
+                dialect.quotechar = quotechar
             ui.debug('investigate_encoding_and_dialect - seconds to detect '
                      'csv dialect: {}'.format(time() - t1))
     except csv.Error:
@@ -434,7 +442,7 @@ def sniff_dialect(sample, sep, skip_dialect, ui):
     return dialect
 
 
-def investigate_encoding_and_dialect(dataset, sep, ui, fast=False,
+def investigate_encoding_and_dialect(dataset, sep, quotechar, ui, fast=False,
                                      encoding=None, skip_dialect=False,
                                      output_delimiter=None):
     """Try to identify encoding and dialect.
@@ -465,7 +473,7 @@ def investigate_encoding_and_dialect(dataset, sep, ui, fast=False,
         sample = dfile.read(sample_size)
 
     try:
-        dialect = sniff_dialect(sample, sep, skip_dialect, ui)
+        dialect = sniff_dialect(sample, sep, quotechar, skip_dialect, ui)
     except csv.Error as ex:
         ui.fatal(ex)
         if len(sample) < 10:
